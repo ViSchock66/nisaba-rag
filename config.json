@@ -1,0 +1,39 @@
+{
+  "embed": {
+    "provider": "ollama",
+    "model": "bge-m3",
+    "base_url": "http://127.0.0.1:11434",
+    "dims": 1024,
+    "timeout_s": 30.0,
+    "nim_model": "nvidia/nv-embedqa-e5-v5",
+    "nim_url": "https://integrate.api.nvidia.com/v1/embeddings"
+  },
+  "store": {
+    "path": "data/chroma",
+    "collection": "documents"
+  },
+  "index_db": "data/index.sqlite",
+  "reranker": {
+    "enabled": true,
+    "model_dir": "data/reranker/multilingual-cross-encoder",
+    "onnx_file": "model.onnx",
+    "tokenizer_file": "tokenizer.json",
+    "max_length": 512,
+    "provider": "cpu",
+    "temperature": 1.0,
+    "relevant_logit_index": 1
+  },
+  "chunk": { "size": 500, "overlap": 100 },
+  "extensions": [
+    ".md", ".txt", ".json", ".yaml", ".yml", ".py", ".js", ".ts", ".mjs",
+    ".cjs", ".html", ".css", ".toml", ".ini", ".cfg", ".sh", ".ps1", ".bat"
+  ],
+  "exclude_dirs": [
+    "node_modules", ".git", ".venv", "venv", "__pycache__", "dist",
+    "build", ".next", "target", ".cache", ".chromadb", "chroma_db", "vendor"
+  ],
+  "exclude_files": [
+    "package-lock.json", "pnpm-lock.yaml", "desktop.ini", "Thumbs.db"
+  ],
+  "max_file_kb": 150
+}

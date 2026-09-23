@@ -1,0 +1,38 @@
+{
+  "comment": "Generic example golden set. Each entry pairs a query with path fragments that count as a correct answer: a retrieved chunk is correct when its source path contains ANY of them. Replace these with queries about YOUR corpus before trusting the numbers. See docs/architecture.md for how retrieval works.",
+  "k": 5,
+  "queries": [
+    {
+      "query": "how does the retry policy handle rate limiting",
+      "expected": ["retry", "backoff"]
+    },
+    {
+      "query": "what chunk size and overlap are used",
+      "expected": ["config.json", "architecture"]
+    },
+    {
+      "query": "how are documents embedded",
+      "expected": ["architecture", "rag.py"]
+    },
+    {
+      "query": "what happens when an embedding provider is unavailable",
+      "expected": ["rag.py", "troubleshooting", "README"]
+    },
+    {
+      "query": "how does hybrid search combine dense and sparse results",
+      "expected": ["hybrid.py", "architecture"]
+    },
+    {
+      "query": "which environment variables configure the data directory",
+      "expected": [".env.example", "config.py"]
+    },
+    {
+      "query": "how do I install the optional reranker",
+      "expected": ["reranker.md", "rerank.py"]
+    },
+    {
+      "query": "how is an already indexed file detected as unchanged",
+      "expected": ["architecture", "indexer.py", "rag.py"]
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+# ── Data (never commit an index; it contains your documents) ──────────
+data/
+*.sqlite
+*.sqlite3
+chroma/
+
+# ── Virtualenvs ───────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+
+# ── Secrets ───────────────────────────────────────────────────────────
+.env
+.env.local
+*.key
+
+# ── Python ────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# ── Test / tooling caches ─────────────────────────────────────────────
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.verify-tmp/
+
+# ── Editors / OS ──────────────────────────────────────────────────────
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+.DS_Store
