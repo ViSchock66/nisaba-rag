@@ -1,15 +1,15 @@
-"""Cliente MCP independiente: habla con Nisaba por stdio como cualquier harness.
+"""Standalone MCP client: talks to Nisaba over stdio the way any harness would.
 
-No depende de DSH ni de su configuracion. Lanza el server como proceso hijo,
-hace el handshake, lista las herramientas y las invoca. Es exactamente lo que
-haria Claude Code, Codex o cualquier otro cliente MCP.
+It depends on no particular harness or its configuration. It launches the
+server as a child process, performs the handshake, lists the tools and calls
+them. This is exactly what Claude Code, Codex or any other MCP client does.
 
-Formato de respuesta observado (mcp 2.x):
-  * las herramientas que devuelven un objeto  -> 1 bloque de contenido con JSON
-  * las que devuelven una lista              -> 1 bloque por elemento, texto plano
+Response framing observed (mcp 2.x):
+  * tools that return an object -> one content block containing JSON
+  * tools that return a list   -> one block per element, plain text
 
-Uso:
-    python tools/mcp_client_probe.py --command <python> --cwd <raiz> [--index <carpeta>]
+Usage:
+    python tools/mcp_client_probe.py --command <python> --cwd <root> [--index <folder>]
 """
 
 from __future__ import annotations
@@ -98,48 +98,48 @@ async def main() -> int:
         env={**os.environ},
     )
 
-    show("1. HANDSHAKE - el cliente lanza el server y descubre sus herramientas")
+    show("1. HANDSHAKE - the client launches the server and discovers its tools")
     async with stdio_client(params) as (read, write):
         async with ClientSession(read, write) as session:
             init = await session.initialize()
             info = getattr(init, "server_info", None) or getattr(init, "serverInfo", None)
             protocol = getattr(init, "protocol_version", None) or getattr(init, "protocolVersion", "?")
-            print(f"  servidor    : {info.name if info else '?'}")
-            print(f"  protocolo   : {protocol}")
+            print(f"  server      : {info.name if info else '?'}")
+            print(f"  protocol    : {protocol}")
 
             tools = await session.list_tools()
-            print(f"\n  herramientas descubiertas: {len(tools.tools)}")
+            print(f"\n  tools discovered: {len(tools.tools)}")
             for tool in tools.tools:
                 first_line = (tool.description or "").strip().splitlines()[0]
                 print(f"    - {tool.name:20} {first_line}")
 
-            show("2. ESTADO INICIAL - indice virgen, sin datos heredados")
+            show("2. INITIAL STATE - virgin index, no inherited data")
             print(f"  status: {json.dumps(obj_of(await session.call_tool('get_index_status', {})))}")
             listed = list_of(await session.call_tool("list_sources", {}))
-            print(f"  fuentes indexadas al arrancar: {len(listed)}")
+            print(f"  sources indexed at startup: {len(listed)}")
 
-            show("3. DIAGNOSTICO - el server verifica su backend por su cuenta")
+            show("3. DIAGNOSTICS - the server checks its own backend")
             backend = obj_of(await session.call_tool("check_backend", {})) or {}
             print(f"  embeddings ok : {backend.get('ok')}")
             print(f"  base_url      : {backend.get('base_url')}")
-            print(f"  modelo        : {backend.get('model')}")
-            print(f"  dimensiones   : {backend.get('dimensions')}")
+            print(f"  model         : {backend.get('model')}")
+            print(f"  dimensions    : {backend.get('dimensions')}")
             reranker = obj_of(await session.call_tool("reranker_status", {})) or {}
-            print(f"  reranker      : disponible={reranker.get('available')}")
+            print(f"  reranker      : available={reranker.get('available')}")
 
             if args.index:
-                show(f"4. INDEXAR - {args.index}")
+                show(f"4. INDEX - {args.index}")
                 payload = obj_of(await session.call_tool("index_folder", {"path": args.index})) or {}
-                print(f"  indexados : {payload.get('indexed')}")
-                print(f"  saltados  : {payload.get('skipped')}")
-                print(f"  errores   : {payload.get('errors')}")
+                print(f"  indexed : {payload.get('indexed')}")
+                print(f"  skipped : {payload.get('skipped')}")
+                print(f"  errors  : {payload.get('errors')}")
                 for detail in payload.get("error_details", [])[:5]:
                     print(f"    ! {detail}")
 
-                show("5. BUSCAR - modo denso")
+                show("5. SEARCH - dense mode")
                 hits = list_of(await session.call_tool(
                     "search_documents",
-                    {"query": "como se instala el servidor MCP", "limit": 3, "mode": "dense"},
+                    {"query": "how do I install the MCP server", "limit": 3, "mode": "dense"},
                 ))
                 for hit in hits:
                     if not isinstance(hit, dict):
@@ -149,7 +149,7 @@ async def main() -> int:
                     print(f"  [sim {hit.get('similarity', 0):.3f}] {src.name}#{hit.get('chunk')}")
                     print(f"          {hit.get('text', '')[:100].strip()}...")
 
-                show("6. BUSCAR - modo hibrido (denso + BM25 + RRF)")
+                show("6. SEARCH - hybrid mode (dense + BM25 + RRF)")
                 hits = list_of(await session.call_tool(
                     "search_documents",
                     {"query": "reciprocal rank fusion", "limit": 3, "mode": "hybrid"},
@@ -159,26 +159,26 @@ async def main() -> int:
                         src = Path(hit.get("source") or "?")
                         print(f"  [rrf {hit.get('rrf_score', 0):.4f}] {src.name}#{hit.get('chunk')}")
 
-                show("7. INCREMENTAL - reindexar lo mismo no debe reprocesar nada")
+                show("7. INCREMENTAL - re-indexing the same folder must reprocess nothing")
                 again = obj_of(await session.call_tool("index_folder", {"path": args.index})) or {}
-                print(f"  indexados : {again.get('indexed')}   (debe ser 0)")
-                print(f"  saltados  : {again.get('skipped')}")
+                print(f"  indexed : {again.get('indexed')}   (must be 0)")
+                print(f"  skipped : {again.get('skipped')}")
 
-                show("8. GESTION - listar y borrar una fuente")
+                show("8. MANAGEMENT - list and delete one source")
                 listed = list_of(await session.call_tool("list_sources", {}))
-                print(f"  fuentes indexadas: {len(listed)}")
+                print(f"  sources indexed: {len(listed)}")
                 for entry in listed:
                     print(f"    - {Path(str(entry)).name}")
                 if listed:
                     victim = str(listed[0])
                     await session.call_tool("delete_source", {"source": victim})
                     remaining = list_of(await session.call_tool("list_sources", {}))
-                    print(f"  borrada: {Path(victim).name}")
-                    print(f"  fuentes restantes: {len(remaining)}")
+                    print(f"  deleted: {Path(victim).name}")
+                    print(f"  sources remaining: {len(remaining)}")
 
-            show("RESULTADO")
-            print("  El server respondio a todas las llamadas MCP por stdio.")
-            print("  Ninguna configuracion de DSH fue leida ni modificada.")
+            show("RESULT")
+            print("  The server answered every MCP call over stdio.")
+            print("  No harness configuration was read or modified.")
     return 0
 
 

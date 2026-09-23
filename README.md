@@ -401,23 +401,74 @@ the protocol. Use it to confirm the server works *before* wiring it into any
 client — if this passes, the problem is in the harness registration, not in
 Nisaba.
 
-```
-1. HANDSHAKE
-   servidor    : nisaba
-   protocolo   : 2025-11-25
-   herramientas descubiertas: 9
+Real output from `--index ./docs` on this repository, with the nine tool
+descriptions and the per-chunk text previews elided:
 
-2. ESTADO INICIAL
-   status: {"files": 0, "chunks": 0}
+```text
+======================================================================
+1. HANDSHAKE - the client launches the server and discovers its tools
+======================================================================
+  server      : nisaba
+  protocol    : 2025-11-25
 
-3. DIAGNOSTICO
-   embeddings ok : True   base_url: http://127.0.0.1:11434   dimensiones: 1024
+  tools discovered: 9
+    ...
+======================================================================
+2. INITIAL STATE - virgin index, no inherited data
+======================================================================
+  status: {"files": 0, "chunks": 0}
+  sources indexed at startup: 0
 
-4. INDEXAR     -> 2 archivos, 0 errores
-5. BUSCAR denso   -> [sim 0.802] guia.md
-6. BUSCAR hibrido -> [rrf 0.0328] fusion.md
-7. INCREMENTAL    -> 0 indexados, 2 saltados
-8. GESTION        -> borrada 1 fuente
+======================================================================
+3. DIAGNOSTICS - the server checks its own backend
+======================================================================
+  embeddings ok : True
+  base_url      : http://127.0.0.1:11434
+  model         : bge-m3
+  dimensions    : 1024
+  reranker      : available=False
+
+======================================================================
+4. INDEX - ./docs
+======================================================================
+  indexed : 2
+  skipped : 0
+  errors  : 0
+
+======================================================================
+5. SEARCH - dense mode
+======================================================================
+  [sim 0.562] architecture.md#14
+  [sim 0.537] reranker.md#5
+  [sim 0.507] reranker.md#4
+
+======================================================================
+6. SEARCH - hybrid mode (dense + BM25 + RRF)
+======================================================================
+  [rrf 0.0328] architecture.md#10
+  [rrf 0.0323] architecture.md#11
+  [rrf 0.0315] reranker.md#8
+
+======================================================================
+7. INCREMENTAL - re-indexing the same folder must reprocess nothing
+======================================================================
+  indexed : 0   (must be 0)
+  skipped : 2
+
+======================================================================
+8. MANAGEMENT - list and delete one source
+======================================================================
+  sources indexed: 2
+    - architecture.md
+    - reranker.md
+  deleted: architecture.md
+  sources remaining: 1
+
+======================================================================
+RESULT
+======================================================================
+  The server answered every MCP call over stdio.
+  No harness configuration was read or modified.
 ```
 
 > On Windows, running an MCP client requires creating pipes for the stdio
