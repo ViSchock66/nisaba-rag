@@ -364,6 +364,17 @@ configured:
 NISABA_TEST_RERANKER_DIR=/path/to/model pytest tests/test_reranker_real.py
 ```
 
+### Sandboxed environments
+
+Roughly half the suite uses pytest's `tmp_path`, and pytest allocates those by
+*listing* its base temp directory to pick a numbered scratch dir. Some sandboxes
+deny that listing. When they do, those tests fail at setup with `WinError 5` on
+a temp path, and `pytest` exits non-zero even though every test that ran passed.
+
+Run the suite in a normal terminal. There is no `--basetemp` value that avoids
+it: the listing happens once per test, so pointing the base somewhere else does
+not help.
+
 ### Verifying an install
 
 Three standalone scripts check a real deployment. None of them needs pytest, and
