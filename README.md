@@ -13,7 +13,9 @@ leaves the machine unless a remote embedding provider is configured explicitly.
 - Dense and sparse retrieval: semantic search and BM25 keyword search, fused
   with Reciprocal Rank Fusion.
 - Cross-encoder reranking: a second-stage ONNX model reorders the fused
-  candidates. It ships in the default install, not as an optional extra.
+  candidates. The reranker *code* is a core dependency, but the *model* is a
+  separate one-time download — see [docs/reranker.md](docs/reranker.md). Until
+  you install one, search works and simply returns the fused order.
 - Incremental indexing: files are tracked by content hash, so re-indexing a
   large folder only pays for what changed.
 - Small surface: eight modules and no required heavyweight ML framework.
@@ -110,7 +112,7 @@ python -m venv .venv
 pip install -e ".[dev]"
 ```
 
-### Two things to install, and one that is optional
+### Two runtime pieces, one of them optional
 
 Nisaba needs **two** runtime pieces beyond Python, because it does two
 different jobs:
@@ -118,15 +120,17 @@ different jobs:
 | Piece | Purpose | Required? |
 |---|---|---|
 | An embeddings server | Turns text into vectors | **Yes** |
-| A reranker model | Cross-encoder reordering of candidates | **Yes, for the default config** |
+| A reranker model | Cross-encoder reordering of candidates | **No — recommended** |
 
 The reranker *code* is a core dependency (installed above). The reranker
 *model* is a separate 100–500 MB file that cannot be committed to a repository,
 so it is a one-time download — see [docs/reranker.md](docs/reranker.md).
 
-If you do not want reranking, set `"enabled": false` under `reranker` in
-`config.json` and the engine runs dense + hybrid search only. Nothing else
-changes, and `search_documents(..., rerank=false)` skips it per call anyway.
+`reranker.enabled` is `true` in the default `config.json`, so a fresh clone
+reports a `WARN` in `nisaba-rag doctor` until you install a model. That is
+expected, not a broken install: search keeps working and returns the fused
+order without reranking. Install a model to silence the warning, or set
+`"enabled": false` to turn reranking off explicitly.
 
 ### Embedding backend
 
